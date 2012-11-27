@@ -16,7 +16,7 @@ typedef _Bool bool
 
 
 bool check_configuration( File * configFile);
-void generate_config( configFile);
+
 
 
 

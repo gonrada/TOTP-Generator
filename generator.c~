@@ -14,11 +14,11 @@ int main( int argc, char ** argv)
 	{
 		do
 		{
-//FIXME			cout << "Valid configuration not found\n"
-//FIXME			cout << "1.\tGenerate Config & Shared Secrets\n"
-//FIXME			cout << "2.\tRestore Configuration\n"
-//FIXME			cout << "option[1]:\n"
-//FIXME			cin >> choice
+			cout << "Valid configuration not found\n"
+			cout << "1.\tGenerate Config & Shared Secrets\n"
+			cout << "2.\tRestore Configuration\n"
+			cout << "option[1]:\n"
+			cin >> choice
 			if(choice == '' or choice == 1)
 			{
 				generate_config( configFile);
