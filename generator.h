@@ -60,12 +60,12 @@ bool check_configuration(FILE * configFile);
   *
   *
   */
-bool generate_config(FILE * configFile);
+bool generate_config(void);
 
 /*
  *
  */
-bool generate_totp(FILE * configFile);
+bool generate_totp(void);
 
 
 /**
