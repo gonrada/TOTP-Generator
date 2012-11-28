@@ -7,10 +7,10 @@ all: generator
 hmac.o: hmac.h hmac.c
 	$(CC) $(CFLAGS) -c hmac.c
 
-generator.o: generator.c generator.h hmac.h rand.h
+generator.o: generator.c generator.h hmac.h
 	$(CC) $(CFLAGS) -c generator.c
 
-generator: generator.o hmac.o rand.o
+generator: generator.o hmac.o
 	$(CC) $(CFLAGS) -o generator generator.o hmac.o ${LIBS}
 
 clean:
