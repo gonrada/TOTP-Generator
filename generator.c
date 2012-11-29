@@ -30,14 +30,13 @@
 
 int main( int argc, char ** argv)
 {
-	FILE * configFile;
 	bool isConfigured = false, invalid = false;
 	char choice[2];
 
 
 	do
 	{
-		isConfigured = check_configuration( configFile);
+		isConfigured = check_configuration();
 		if(!isConfigured)
 		{
 			do
@@ -49,7 +48,7 @@ int main( int argc, char ** argv)
 				scanf("%s", choice);
 				if(choice[0] == '1')
 				{
-					generate_config( configFile);
+					generate_config();
 				}
 				else if(choice[0] == '2')
 				{
@@ -61,7 +60,8 @@ int main( int argc, char ** argv)
 		}
 
 	}while(!isConfigured);
-	//	genPassword()
+	
+    generate_totp();
 
 	return 0;
 }
@@ -83,10 +83,12 @@ bool check_configuration()
 	return true;
 }
 
-bool generate_config(FILE * configFile)
+bool generate_config()
 {
 	char * seedStr;
+    FILE * configFile;
 	FILE * seedSrc;
+    int i=0;
 	unsigned char * seed, * seedB64;
 	unsigned char * key, * keyB64;
 	unsigned char user_name[64] = {0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D};
@@ -96,7 +98,7 @@ bool generate_config(FILE * configFile)
 	configFile = fopen(CONFIG_FILE, "w+");
 	if(!configFile)
     {
-        perror("Error opening [%s] for w+",CONFIG_FILE);
+        printf("Error opening [%s] for w+",CONFIG_FILE);
 		return false;
     }
 
@@ -105,15 +107,26 @@ bool generate_config(FILE * configFile)
 	seedSrc = fopen("/dev/urandom", "r");
 	if(!seedSrc)
     {
-        perror("Error opening [%s] for r","/dev/urandom");
+        printf("Error opening [%s] for r","/dev/urandom");
 		return false;
     }
 	fread( seed, SEED_LEN, 1, seedSrc);
 
+    
+
 
 	seedB64 = base64( seed, SEED_LEN);
+   
+    for( ; i<strlen(seedB64); ++i)
+    {
+        if(seedB64[i] == 0x0A)
+        {
+            seedB64[i] = 0x60;
+        }
+        //printf("0x%02X ",(int) seedB64[i]);
+    }
 
-    printf("%d",strlen(seedB64));
+    printf("\n%d ",strlen(seedB64));
 
 	seedStr = (char *) malloc(strlen(seedB64)+7);
 	sprintf(seedStr, "seed: %s\n", seedB64);
@@ -166,12 +179,13 @@ bool generate_totp()
     configFile = fopen(CONFIG_FILE, "r");
 	if(!configFile)
     {
-        perror("Error opening [%s] for r",CONFIG_FILE);
+        printf("Error opening [%s] for r",CONFIG_FILE);
 		return false;
     }
 	count = fscanf(configFile, "seed: %s\n", seedB64);
     printf("seed[%d bytes]: %s\n",count, seedB64);
 	fscanf(configFile, "user: %s\n", user_name);
+    printf("username: %s\n",user_name);
 //	
 
 

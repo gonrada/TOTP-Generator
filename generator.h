@@ -54,7 +54,7 @@
   *
   *
   */
-bool check_configuration(FILE * configFile);
+bool check_configuration(void);
 
 /**
   *
