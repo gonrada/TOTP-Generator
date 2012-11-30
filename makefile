@@ -1,6 +1,6 @@
-CC=gcc
+CC=gcc 
 CFLAG=-std=c99 -Wall -pedantic -I..
-LIBS=-lcrypto 
+LIBS=-lcrypto -lm
 
 all: generator
 

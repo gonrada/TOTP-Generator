@@ -31,6 +31,7 @@
 
 #include "hmac.h"
 
+#include <inttypes.h>
 #include <math.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
@@ -45,36 +46,53 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef DEBUG
+#define PRINTD( format, ... ) fprintf(stderr,format, __VA_ARGS__ );
+#else
+#define PRINTD( format, ... )
+#endif
+
 #define CONFIG_FILE ".totp_conf"
+#define DIGITS 7
 #define PERIOD 30
 #define SEED_LEN 64
 
 
 /**
-  *
-  *
-  */
+ *
+ *
+ */
 bool check_configuration(void);
 
 /**
-  *
-  *
-  */
+ *
+ *
+ */
 bool generate_config(void);
 
-/*
+/**
  *
  */
 bool generate_totp(void);
 
-
 /**
-  *
-  * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
-  */
+ *
+ * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
+ */
 char *base64(const unsigned char *input, int length);
 
+/**
+ *
+ * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
+ */
 char *unbase64(unsigned char *input, int length);
+
+/**
+ *
+ *
+ */
+uint32_t dynamic_truncation(const unsigned char *input, int length);
+
 
 #endif
 

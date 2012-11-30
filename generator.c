@@ -112,31 +112,27 @@ bool generate_config()
 	}
 	fread( seed, SEED_LEN, 1, seedSrc);
 
-
+    close(seedSrc);
 
 
 	seedB64 = base64( seed, SEED_LEN);
 
-	for( ; i<strlen(seedB64); ++i)
+/*	for( ; i<strlen(seedB64); ++i)
 	{
 		if(seedB64[i] == 0x0A)
 		{
-			seedB64[i] = 0x60;
+			seedB64[i] = 0x61;
 		}
-		//printf("0x%02X ",(int) seedB64[i]);
 	}
-
+*/
 	printf("\n%d ",strlen(seedB64));
 
-	seedStr = (char *) malloc(strlen(seedB64)+7);
-	sprintf(seedStr, "seed: %s\n", seedB64);
-
-	fprintf(configFile, "%s", seedStr);    
-	printf("%s", seedStr);
+	fprintf(configFile, "%s\n", seedB64);    
+	printf("seed: %s\n", seedB64);
 
 	printf("Enter username: ");
 	scanf("%s", user_name);
-	fprintf(configFile, "user: %s\n", user_name);
+	fprintf(configFile, "%s\n", user_name);
 
 
 	printf("Enter password: ");
@@ -145,8 +141,15 @@ bool generate_config()
 	user_secret = hmac_sha512( user_pass, 64, user_name, 64);
 
 	key = hmac_sha512( user_secret, RESULT_LEN, seed, SEED_LEN);
+    keyB64 = base64(key, RESULT_LEN);
 
-	printf("key: %s\n", base64(key, RESULT_LEN));
+	printf("key: %s\n", keyB64);
+   
+    free((void*) seed); 
+    free((void*) seedB64);
+    free((void*) user_secret);
+    free((void*) key);
+    free((void*) keyB64);
 
 	fclose(configFile);
 	return true;
@@ -156,10 +159,11 @@ bool generate_config()
 bool generate_totp()
 {
 	FILE * configFile;
-	int count;
+	int count, i=0;
+    uint32_t bin_code, totp;
 	uint64_t data;
 	unsigned char * seed, seedB64[90];
-	unsigned char * key;
+	unsigned char * key, *result;
 	unsigned char user_name[64] = {0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D,0xB7,0x97,0x6A,0x2D};
 	unsigned char user_pass[64] = {0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97,0xC5,0xD8,0x34,0x97};
 	unsigned char * user_secret;
@@ -184,27 +188,72 @@ bool generate_totp()
 		printf("Error opening [%s] for r",CONFIG_FILE);
 		return false;
 	}
-	fscanf(configFile, "seed: %s\n", seedB64);
+
+    fread( seedB64, 90, 1, configFile);
+    seedB64[89] = '\0';
 	printf("seed: %s\n", seedB64);
-	fscanf(configFile, "user: %s\n", user_name);
+	fscanf(configFile, "%s\n", user_name);
 	printf("username: %s\n",user_name);
 	printf("Enter password: ");
 	scanf("%s",user_pass);
 
 	seed = unbase64( seedB64, 89);
-	user_secret = hmac_sha512( user_pass, 64, user_name, 64);
+/*
+	printf("seed: ");
+    for( i=0; i < SEED_LEN; ++i)
+        printf("0x%02X ",seed[i]);
+    printf("\n");
+
+    printf("user_name: ");
+    for( i=0; i < 64; ++i)
+        printf("0x%02X ", user_name[i]);
+    printf("\n");   
+
+	printf("user_pass: ");
+    for( i=0; i < 64; ++i)
+        printf("0x%02X ",user_pass[i]);
+    printf("\n");
+*/
+    user_secret = hmac_sha512( user_pass, 64, user_name, 64);
+/*	printf("user_secret: ");
+    for( i=0; i < RESULT_LEN; ++i)
+        printf("0x%02X ",user_secret[i]);
+    printf("\n");
+*/
+
+
 	key = hmac_sha512( user_secret, RESULT_LEN, seed, SEED_LEN);
-
-
+/*	printf("key: ");
+    for( i=0; i < RESULT_LEN; ++i)
+        printf("0x%02X ",key[i]);
+    printf("\n");
+*/
 
 	data = (uint64_t) floor( time(NULL)/PERIOD);
+    printf("Ticks: %" PRIu64 "\n",data);
 
+    result = hmac_sha512( key, RESULT_LEN, (unsigned char *) &data, sizeof(uint64_t) /* 8 */);
 
+/*  printf("result: ");
+    for( i=0; i < RESULT_LEN; ++i)
+        printf("0x%02X ",result[i]);
+    printf("\n");
+*/
+    bin_code = dynamic_truncation( result, RESULT_LEN);
+
+    printf("DBC: %u\n", bin_code);
+
+    totp = bin_code % (int) floor(pow(10.0, DIGITS));
+
+    printf("\n\tOne-time Password: %u\n", totp);
 
 	return true;
 }
 
-
+/**
+ *
+ * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
+ */
 char *base64(const unsigned char *input, int length)
 {
 	BIO *bmem, *b64;
@@ -226,7 +275,10 @@ char *base64(const unsigned char *input, int length)
 	return buff;
 }
 
-
+/**
+ *
+ * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
+ */
 char *unbase64(unsigned char *input, int length)
 {
 	BIO *b64, *bmem;
@@ -243,4 +295,29 @@ char *unbase64(unsigned char *input, int length)
 	BIO_free_all(bmem);
 
 	return buffer;
+}
+
+/**
+ * Dynamic Truncation Function
+ * 
+ * 
+ */
+uint32_t dynamic_truncation(const unsigned char *input, int length)
+{
+    uint32_t bin_code;
+    unsigned char offset;
+    
+    offset = input[length - 1] & 0x34; /* Assume 64 bytes; thus we want the low 6 bits */
+    offset = offset % 59; /* Again, assume 64 of input */
+
+    printf("DT offset: %u\n", (unsigned int) offset);
+
+    /* RFC4226; Page 7-8;
+     */    
+    bin_code = (input[offset] & 0x7f) << 24
+        | (input[offset+1] & 0xff) << 16
+        | (input[offset+2] & 0xff) << 8
+        | (input[offset+3] & 0xff) ;
+
+    return bin_code;
 }
