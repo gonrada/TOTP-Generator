@@ -53,6 +53,7 @@
 #endif
 
 #define CONFIG_FILE ".totp_conf"
+#define KEY_FILE "totp.key"
 #define DIGITS 7
 #define PERIOD 30
 #define SEED_LEN 64

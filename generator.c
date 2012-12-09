@@ -86,7 +86,7 @@ bool check_configuration()
 bool generate_config()
 {
 	char * seedStr;
-	FILE * configFile;
+	FILE * configFile, * keyFile;
 	FILE * seedSrc;
 	int i=0;
 	unsigned char * seed, * seedB64;
@@ -141,7 +141,10 @@ bool generate_config()
 	user_secret = hmac_sha512( user_pass, 64, user_name, 64);
 
 	key = hmac_sha512( user_secret, RESULT_LEN, seed, SEED_LEN);
-    keyB64 = base64(key, RESULT_LEN);
+	keyB64 = base64(key, RESULT_LEN);
+
+	keyFile = fopen(KEY_FILE, "w+");
+	fwrite(key, RESULT_LEN, 1, keyFile);
 
 	printf("key: %s\n", keyB64);
    
@@ -151,6 +154,7 @@ bool generate_config()
     free((void*) key);
     free((void*) keyB64);
 
+	fclose(keyFile);
 	fclose(configFile);
 	return true;
 }
