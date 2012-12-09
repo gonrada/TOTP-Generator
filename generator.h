@@ -22,7 +22,7 @@
  *
  * @section DESCRIPTION
  *
- * A C/C++ implementation of a Time-base One-Time Password generator using openssl
+ * A C implementation of a Time-base One-Time Password generator using openssl
  */
 
 
@@ -57,6 +57,7 @@
 #define DIGITS 7
 #define PERIOD 30
 #define SEED_LEN 64
+#define MAX_OFFSET (length - 5)
 
 
 /**
@@ -80,13 +81,13 @@ bool generate_totp(void);
  *
  * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
  */
-char *base64(const unsigned char *input, int length);
+char * base64_encode(const unsigned char *input, int length);
 
 /**
  *
  * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
  */
-char *unbase64(unsigned char *input, int length);
+char * base64_decode(unsigned char *input, int length);
 
 /**
  *

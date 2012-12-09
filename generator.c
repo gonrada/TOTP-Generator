@@ -33,7 +33,6 @@ int main( int argc, char ** argv)
 	bool isConfigured = false, invalid = false;
 	char choice[2];
 
-
 	do
 	{
 		isConfigured = check_configuration();
@@ -60,16 +59,28 @@ int main( int argc, char ** argv)
 		}
 
 	}while(!isConfigured);
-	
-    generate_totp();
+
+	generate_totp();
 
 	return 0;
 }
 
-
+/**
+ * @pre
+ *    Any preconditions that this method requires
+ * @post
+ *    Any postconditions that result because of this method
+ * @param [0, n-1] paramName
+ *    Brief description of parameter
+ * @return
+ *    Brief description of return value
+ * @throw
+ *    An EXPLICIT throw specification - including which guarantee it offers (basic, strong, nothrow)
+ *    and WHY the various exceptions may be thrown.
+ */
 bool check_configuration()
 {
-    FILE * configFile;
+	FILE * configFile;
 	configFile = fopen(CONFIG_FILE, "r");
 	if(!configFile)
 		return false;
@@ -83,6 +94,17 @@ bool check_configuration()
 	return true;
 }
 
+/**
+ * @pre
+ *    A valid configuration file was not found.
+ * @post
+ *    None
+ * @return
+ *    Will return true upon successfully generating a configuration.
+ * @throw
+ *    An EXPLICIT throw specification - including which guarantee it offers (basic, strong, nothrow)
+ *    and WHY the various exceptions may be thrown.
+ */
 bool generate_config()
 {
 	char * seedStr;
@@ -112,19 +134,11 @@ bool generate_config()
 	}
 	fread( seed, SEED_LEN, 1, seedSrc);
 
-    close(seedSrc);
+	close(seedSrc);
 
 
-	seedB64 = base64( seed, SEED_LEN);
+	seedB64 = base64_encode( seed, SEED_LEN);
 
-/*	for( ; i<strlen(seedB64); ++i)
-	{
-		if(seedB64[i] == 0x0A)
-		{
-			seedB64[i] = 0x61;
-		}
-	}
-*/
 	printf("\n%d ",strlen(seedB64));
 
 	fprintf(configFile, "%s\n", seedB64);    
@@ -141,30 +155,42 @@ bool generate_config()
 	user_secret = hmac_sha512( user_pass, 64, user_name, 64);
 
 	key = hmac_sha512( user_secret, RESULT_LEN, seed, SEED_LEN);
-	keyB64 = base64(key, RESULT_LEN);
+	keyB64 = base64_encode(key, RESULT_LEN);
 
 	keyFile = fopen(KEY_FILE, "w+");
 	fwrite(key, RESULT_LEN, 1, keyFile);
 
 	printf("key: %s\n", keyB64);
-   
-    free((void*) seed); 
-    free((void*) seedB64);
-    free((void*) user_secret);
-    free((void*) key);
-    free((void*) keyB64);
+
+	free((void*) seed); 
+	free((void*) seedB64);
+	free((void*) user_secret);
+	free((void*) key);
+	free((void*) keyB64);
 
 	fclose(keyFile);
 	fclose(configFile);
 	return true;
 }
 
-
+/**
+ * @pre
+ *    Any preconditions that this method requires
+ * @post
+ *    Any postconditions that result because of this method
+ * @param [0, n-1] paramName
+ *    Brief description of parameter
+ * @return
+ *    Will return true upon successfully generating a one-time password.
+ * @throw
+ *    An EXPLICIT throw specification - including which guarantee it offers (basic, strong, nothrow)
+ *    and WHY the various exceptions may be thrown.
+ */
 bool generate_totp()
 {
 	FILE * configFile;
 	int count, i=0;
-    uint32_t bin_code, totp;
+	uint32_t bin_code, totp;
 	uint64_t data;
 	unsigned char * seed, seedB64[90];
 	unsigned char * key, *result;
@@ -193,72 +219,49 @@ bool generate_totp()
 		return false;
 	}
 
-    fread( seedB64, 90, 1, configFile);
-    seedB64[89] = '\0';
-	printf("seed: %s\n", seedB64);
+	fread( seedB64, 90, 1, configFile);
+	seedB64[89] = '\0';
 	fscanf(configFile, "%s\n", user_name);
 	printf("username: %s\n",user_name);
 	printf("Enter password: ");
 	scanf("%s",user_pass);
 
-	seed = unbase64( seedB64, 89);
-/*
-	printf("seed: ");
-    for( i=0; i < SEED_LEN; ++i)
-        printf("0x%02X ",seed[i]);
-    printf("\n");
+	seed = base64_decode( seedB64, 89);
 
-    printf("user_name: ");
-    for( i=0; i < 64; ++i)
-        printf("0x%02X ", user_name[i]);
-    printf("\n");   
-
-	printf("user_pass: ");
-    for( i=0; i < 64; ++i)
-        printf("0x%02X ",user_pass[i]);
-    printf("\n");
-*/
-    user_secret = hmac_sha512( user_pass, 64, user_name, 64);
-/*	printf("user_secret: ");
-    for( i=0; i < RESULT_LEN; ++i)
-        printf("0x%02X ",user_secret[i]);
-    printf("\n");
-*/
-
+	user_secret = hmac_sha512( user_pass, 64, user_name, 64);
 
 	key = hmac_sha512( user_secret, RESULT_LEN, seed, SEED_LEN);
-/*	printf("key: ");
-    for( i=0; i < RESULT_LEN; ++i)
-        printf("0x%02X ",key[i]);
-    printf("\n");
-*/
 
 	data = (uint64_t) floor( time(NULL)/PERIOD);
-    printf("Ticks: %" PRIu64 "\n",data);
 
-    result = hmac_sha512( key, RESULT_LEN, (unsigned char *) &data, sizeof(uint64_t) /* 8 */);
+	result = hmac_sha512( key, RESULT_LEN, (unsigned char *) &data, sizeof(uint64_t) /* 8 */);
 
-/*  printf("result: ");
-    for( i=0; i < RESULT_LEN; ++i)
-        printf("0x%02X ",result[i]);
-    printf("\n");
-*/
-    bin_code = dynamic_truncation( result, RESULT_LEN);
+	bin_code = dynamic_truncation( result, RESULT_LEN);
 
-    printf("DBC: %u\n", bin_code);
+	totp = bin_code % (int) floor(pow(10.0, DIGITS));
 
-    totp = bin_code % (int) floor(pow(10.0, DIGITS));
-
-    printf("\n\tOne-time Password: %u\n", totp);
+	printf("\n\tOne-time Password: %u\n\n", totp);
 
 	return true;
 }
 
 /**
+ * A wrapper for openssl base64 encode.
  *
+ * This wrapper was found online. It did what I needed it to.
+ * The source can be found here:
  * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
+ *
+ * @pre
+ *    None
+ * @post
+ *    The return value must later be freed.
+ * @param[in] input A pointer to the input byte stream.
+ * @param[in] length Length of the input byte stream.
+ * @return
+ *    A string with the encoded base64 value.
  */
-char *base64(const unsigned char *input, int length)
+char * base64_encode(const unsigned char *input, int length)
 {
 	BIO *bmem, *b64;
 	BUF_MEM *bptr;
@@ -280,10 +283,22 @@ char *base64(const unsigned char *input, int length)
 }
 
 /**
+ * A wrapper for openssl base64 decode.
  *
+ * This wrapper was found online. It did what I needed it to.
+ * The source can be found here:
  * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
+ *
+ * @pre
+ *    None
+ * @post
+ *    The return value must later be freed.
+ * @param[in] input A pointer to the input base64 stream.
+ * @param[in] length Length of the input base64 stream.
+ * @return
+ *    A string with the decoded base64 value.
  */
-char *unbase64(unsigned char *input, int length)
+char * base64_decode(unsigned char *input, int length)
 {
 	BIO *b64, *bmem;
 
@@ -302,26 +317,41 @@ char *unbase64(unsigned char *input, int length)
 }
 
 /**
- * Dynamic Truncation Function
+ * Dynamic Truncation Function.
  * 
- * 
+ * This function is an implementation of the dynamic trucation functionality
+ * specified in RFC4226. This function assumes we are using HMAC_SHA512, which
+ * has a 64 byte digest. The input length is required so the specific hmac 
+ * being used may be more easily changed.
+ *
+ * @pre
+ *    None
+ * @post
+ *    None
+ * @param[in] input A pointer to the result from the hmac.
+ * @param[in] length Length of the input byte stream.
+ * @return
+ *    The value returned is the dynamic binary code (DBC).
  */
 uint32_t dynamic_truncation(const unsigned char *input, int length)
 {
-    uint32_t bin_code;
-    unsigned char offset;
-    
-    offset = input[length - 1] & 0x34; /* Assume 64 bytes; thus we want the low 6 bits */
-    offset = offset % 59; /* Again, assume 64 of input */
+	uint32_t bin_code;
+	unsigned char offset;
 
-    printf("DT offset: %u\n", (unsigned int) offset);
+	/* Assume 64 bytes; thus we want the low 6 bits */
+	offset = input[length - 1] & 0x3F;
+	
+	/* We do not want the last byte, and we want a consecutive 4 bytes.
+	 * Thus for an input of 64 bytes MAX_OFFSET will be 59.
+	 */
+	offset = offset % MAX_OFFSET;  
 
-    /* RFC4226; Page 7-8;
-     */    
-    bin_code = (input[offset] & 0x7f) << 24
-        | (input[offset+1] & 0xff) << 16
-        | (input[offset+2] & 0xff) << 8
-        | (input[offset+3] & 0xff) ;
+	/* RFC4226; Page 7-8;
+	*/    
+	bin_code = (input[offset] & 0x7f) << 24
+		| (input[offset+1] & 0xff) << 16
+		| (input[offset+2] & 0xff) << 8
+		| (input[offset+3] & 0xff) ;
 
-    return bin_code;
+	return bin_code;
 }
