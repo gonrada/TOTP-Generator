@@ -83,19 +83,19 @@ bool generate_totp(void);
  *
  * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
  */
-char * base64_encode(const unsigned char *input, int length);
+uint8_t * base64_encode(const uint8_t *input, int length);
 
 /**
  *
  * http://www.ioncannon.net/programming/34/howto-base64-encode-with-cc-and-openssl/
  */
-char * base64_decode(unsigned char *input, int length);
+uint8_t * base64_decode(uint8_t *input, int length);
 
 /**
  *
  *
  */
-uint32_t dynamic_truncation(const unsigned char *input, int length);
+uint32_t dynamic_truncation(const uint8_t *input, int length);
 
 
 #endif
